@@ -1,0 +1,4 @@
+rootProject.name = 'txt-client-server-analyser'
+
+include 'server', 'client', 'shared', 'file-analyzer'
+

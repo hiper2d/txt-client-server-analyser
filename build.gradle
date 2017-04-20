@@ -1,0 +1,94 @@
+group 'com.hiper2d'
+version '1.0-SNAPSHOT'
+
+ext {
+    bootGradlePluginVersion = '1.5.2.RELEASE'
+    jacksonVersion = '2.8.7'
+    junitVersion = '4.12'
+    log4jVersion = '2.8.1'
+    lombokVersion = '1.16.16'
+    reactorVersion = '3.0.6.RELEASE'
+}
+
+apply plugin: 'base'
+
+// Apply common repositories, plugins, dependencies to all modules
+subprojects {
+    repositories {
+        mavenCentral()
+    }
+
+    apply plugin: 'java'
+
+    dependencies {
+        compileOnly "org.projectlombok:lombok:$lombokVersion"
+    }
+
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
+}
+
+// Copy 'client' and 'server' module jars into 'dist' directory when build is completed
+configure([project(':client'), project(':server')]) {
+    task copyJar(type: Copy) {
+        from jar
+        into '../dist'
+    }
+    build.dependsOn copyJar
+}
+
+// All modules except 'shared' has dev and prod environments (profiles)
+configure(subprojects - project(':shared')) {
+    ext.env = project.hasProperty('env') ? project.env : 'dev'
+    sourceSets {
+        main {
+            java {
+                srcDir 'src/main/java'
+            }
+            resources {
+                srcDir 'src/main/resources'
+                srcDir "src/main/environment/$env"
+            }
+        }
+    }
+}
+
+//Recursively calls clean task in all modules
+clean {
+    delete 'dist'
+    subprojects.each {
+        it.afterEvaluate {
+            def cleanTask = it.tasks.findByName('clean')
+            if (cleanTask) {
+                dependsOn(cleanTask)
+            }
+        }
+    }
+}
+
+//Recursively removes logs directories
+task cleanLogs(type: Delete) {
+    def files = new HashSet()
+    new File("$projectDir").eachDirRecurse { file ->
+        if (file.isDirectory() && (file.name == 'logs')) {
+            files << file
+        }
+    }
+    delete files
+}
+
+//Recursively removes all temporary directories
+task cleanAll(type: Delete) {
+    def files = new HashSet()
+    new File("$projectDir").eachDirRecurse { file ->
+        if (file.isDirectory() && (file.name in ['.idea', '.gradle', 'build', 'gradle', 'dist', 'logs'])) {
+            files << file
+        }
+    }
+    delete files
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '3.4.1'
+    distributionUrl = "https://services.gradle.org/distributions/gradle-$gradleVersion-all.zip"
+}
