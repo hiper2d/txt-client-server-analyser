@@ -1,0 +1,25 @@
+plugins {
+    id 'io.spring.dependency-management' version '1.0.1.RELEASE'
+}
+
+group 'com.hiper2d'
+version '1.0-SNAPSHOT'
+
+dependencyManagement {
+    imports {
+        mavenBom "org.apache.logging.log4j:log4j-bom:$log4jVersion"
+    }
+}
+
+dependencies {
+    compile project(':shared')
+    compile 'org.apache.logging.log4j:log4j-api'
+    compile 'org.apache.logging.log4j:log4j-core'
+    compile "io.projectreactor:reactor-core:$reactorVersion"
+    testCompile "junit:junit:$junitVersion"
+}
+
+jar {
+    baseName = 'file-analyzer'
+    version = version
+}
